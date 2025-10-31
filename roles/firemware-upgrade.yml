@@ -1,0 +1,17 @@
+---
+- name: Install rpi-update
+  apt:
+    name: rpi-update
+    state: present
+
+- name: Upgrade Raspberry Pi firmware
+  command: rpi-update
+  register: firmware_upgrade
+  changed_when: "'*** If no errors appeared, everything should be fine' in firmware_upgrade.stdout"
+
+- name: Reboot after firmware upgrade
+  reboot:
+    msg: "Rebooting after firmware update"
+    pre_reboot_delay: 10
+    reboot_timeout: 600
+  when: firmware_upgrade.changed

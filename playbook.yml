@@ -1,0 +1,14 @@
+---
+- name: Upgrade Raspberry Pi from Bookworm to Trixie
+  hosts: raspberrypi
+  become: yes
+  vars_files:
+    - vars.yml
+
+  tasks:
+    - name: Include OS upgrade tasks
+      import_tasks: roles/os-upgrade.yml
+
+    - name: Include firmware upgrade tasks
+      import_tasks: roles/firmware-upgrade.yml
+      when: upgrade_firmware | default(false)

@@ -1,0 +1,46 @@
+---
+- name: Gather OS distribution facts
+  setup:
+    filter: ansible_distribution_release
+
+- name: Set fact for old release
+  set_fact:
+    debian_release_old: "{{ ansible_distribution_release }}"
+
+- name: Debug release information
+  debug:
+    msg: "Upgrading from {{ debian_release_old }} to {{ debian_release_new }}"
+
+- name: Fail if not running Bookworm
+  fail:
+    msg: "This playbook is intended for upgrading Bookworm to Trixie. Current release: {{ debian_release_old }}"
+  when: debian_release_old != "bookworm"
+
+- name: Replace Bookworm with Trixie in sources.list
+  replace:
+    path: /etc/apt/sources.list
+    regexp: "{{ debian_release_old }}"
+    replace: "{{ debian_release_new }}"
+
+- name: Replace Bookworm with Trixie in sources.list.d files
+  shell: "sed -i 's/{{ debian_release_old }}/{{ debian_release_new }}/g' /etc/apt/sources.list.d/*.list"
+  args:
+    warn: false
+
+- name: Update apt cache after release change
+  apt:
+    update_cache: yes
+
+- name: Perform full upgrade
+  apt:
+    upgrade: full
+
+- name: Remove obsolete packages
+  apt:
+    autoremove: yes
+
+- name: Reboot the machine
+  reboot:
+    msg: "Rebooting after Debian upgrade"
+    pre_reboot_delay: 10
+    reboot_timeout: 600
